@@ -62,23 +62,21 @@ class LinuxBackupSession {
     }
 
     # Test if OpenSSH client is installed
-    [bool] TestOpenSSHClient() {
+    [void] TestOpenSSHClient() {
         $sshExe = Get-Command ssh -ErrorAction SilentlyContinue
         $scpExe = Get-Command scp -ErrorAction SilentlyContinue
 
         if (-not $sshExe -or -not $scpExe) {
-            Write-Error "OpenSSH client not found. Install it via: Settings > Apps > Optional Features > OpenSSH Client"
-            Write-Host "Or via PowerShell (as Administrator): Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0" -ForegroundColor Yellow
-            return $false
+            Write-Host "Tip: Install via Settings > Apps > Optional Features > OpenSSH Client" -ForegroundColor Yellow
+            Write-Host "     Or (as Administrator): Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0" -ForegroundColor Yellow
+            throw "OpenSSH client (ssh/scp) not found on this system"
         }
-        return $true
     }
 
     # Validate and normalize the source path
-    [bool] ValidateAndNormalizeSource() {
+    [void] ValidateAndNormalizeSource() {
         if (-not (Test-Path $this.Source)) {
-            Write-Error "Source path '$($this.Source)' does not exist"
-            return $false
+            throw "Source path '$($this.Source)' does not exist"
         }
 
         # Normalize paths - handle both local and UNC paths
@@ -103,8 +101,6 @@ class LinuxBackupSession {
             Write-Host "Normalized source path: $($this.Source)" -ForegroundColor Gray
             Write-Host "Source length: $($this.sourceLength)" -ForegroundColor Gray
         }
-
-        return $true
     }
 
     # Normalize the destination path
@@ -116,14 +112,13 @@ class LinuxBackupSession {
     }
 
     # Initialize SSH connection parameters
-    [bool] InitializeSSHConnection() {
+    [void] InitializeSSHConnection() {
         $this.sshTarget = "$($this.UserName)@$($this.HostName)"
         $this.sshArgs = @("-p", $this.Port, "-o", "StrictHostKeyChecking=no")
 
         if ($this.KeyFile) {
             if (-not (Test-Path $this.KeyFile)) {
-                Write-Error "Key file not found: $($this.KeyFile)"
-                return $false
+                throw "Key file not found: $($this.KeyFile)"
             }
             $this.sshArgs += @("-i", $this.KeyFile)
             Write-Host "Authentication: SSH key ($($this.KeyFile))" -ForegroundColor Cyan
@@ -132,33 +127,23 @@ class LinuxBackupSession {
             Write-Host "Authentication: Default SSH keys (~/.ssh/id_rsa, id_ed25519, etc.)" -ForegroundColor Cyan
             Write-Host "Note: For automated/scheduled backups, use -KeyFile parameter" -ForegroundColor Yellow
         }
-
-        return $true
     }
 
     # Test SSH connection to remote host
-    [bool] TestSSHConnection() {
+    [void] TestSSHConnection() {
         Write-Host "Testing SSH connection..." -ForegroundColor Cyan
         $testCmd = "echo 'Connection successful'"
         $sshTestArgs = $this.sshArgs + @($this.sshTarget, $testCmd)
 
-        try {
-            $testResult = & ssh @sshTestArgs
-            if ($LASTEXITCODE -ne 0) {
-                Write-Error "SSH connection failed: $testResult"
-                Write-Host "Troubleshooting tips:" -ForegroundColor Yellow
-                Write-Host "  1. Verify hostname/IP is correct and reachable" -ForegroundColor Yellow
-                Write-Host "  2. Ensure SSH key is set up: ssh-copy-id $($this.UserName)@$($this.HostName)" -ForegroundColor Yellow
-                Write-Host "  3. Test manually: ssh -i `"$($this.KeyFile)`" $($this.UserName)@$($this.HostName)" -ForegroundColor Yellow
-                return $false
-            }
-            Write-Host "Connected successfully!" -ForegroundColor Green
-            return $true
+        $testResult = & ssh @sshTestArgs
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Troubleshooting tips:" -ForegroundColor Yellow
+            Write-Host "  1. Verify hostname/IP is correct and reachable" -ForegroundColor Yellow
+            Write-Host "  2. Ensure SSH key is set up: ssh-copy-id $($this.UserName)@$($this.HostName)" -ForegroundColor Yellow
+            Write-Host "  3. Test manually: ssh -i `"$($this.KeyFile)`" $($this.UserName)@$($this.HostName)" -ForegroundColor Yellow
+            throw "SSH connection failed (exit code: $LASTEXITCODE): $testResult"
         }
-        catch {
-            Write-Error "SSH connection failed: $_"
-            return $false
-        }
+        Write-Host "Connected successfully!" -ForegroundColor Green
     }
 
     # Create the destination directory on remote host
@@ -565,14 +550,14 @@ class LinuxBackupSession {
         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
         try {
-            if (-not $this.TestOpenSSHClient()) { return }
-            if (-not $this.ValidateAndNormalizeSource()) { return }
+            $this.TestOpenSSHClient()
+            $this.ValidateAndNormalizeSource()
 
             $this.NormalizeDestination()
             $this.ShowConfiguration()
 
-            if (-not $this.InitializeSSHConnection()) { return }
-            if (-not $this.TestSSHConnection()) { return }
+            $this.InitializeSSHConnection()
+            $this.TestSSHConnection()
 
             $this.CreateDestinationDirectory()
 
@@ -587,6 +572,9 @@ class LinuxBackupSession {
             }
 
             $this.ShowSummary()
+        }
+        catch {
+            Write-Host "ERROR: $_" -ForegroundColor Red
         }
         finally {
             [Console]::OutputEncoding = $this.previousOutputEncoding

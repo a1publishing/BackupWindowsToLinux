@@ -1,6 +1,6 @@
 @{
     RootModule        = 'BackupWindowsToLinux.psm1'
-    ModuleVersion     = '2.0.0'
+    ModuleVersion     = '2.1.0'
     GUID              = 'a8f4c3d2-1e5b-4a9c-8f7d-2b6e9c4a1f8e'
     Author            = 'Mike Flynn'
     CompanyName       = 'a1publishing.com'

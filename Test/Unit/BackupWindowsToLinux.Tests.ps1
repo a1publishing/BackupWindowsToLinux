@@ -182,24 +182,24 @@ Describe 'LinuxBackupSession unit tests' -Tag 'Unit' {
 
     Context 'ValidateAndNormalizeSource' {
 
-        It 'Returns false for non-existent path' {
+        It 'Throws for non-existent path' {
             InModuleScope BackupWindowsToLinux {
                 $s = [LinuxBackupSession]::new('C:\ThisPathDoesNotExist_XYZ_12345', '/backup', 'host', 'user', '', 22, @(), $false, $false, 'SilentlyContinue')
-                $s.ValidateAndNormalizeSource() | Should -Be $false
+                { $s.ValidateAndNormalizeSource() } | Should -Throw "*does not exist*"
             }
         }
 
-        It 'Returns true for existing path' {
+        It 'Does not throw for existing path' {
             InModuleScope BackupWindowsToLinux {
                 $s = [LinuxBackupSession]::new($env:TEMP, '/backup', 'host', 'user', '', 22, @(), $false, $false, 'SilentlyContinue')
-                $s.ValidateAndNormalizeSource() | Should -Be $true
+                { $s.ValidateAndNormalizeSource() } | Should -Not -Throw
             }
         }
 
         It 'Adds trailing backslash to normalized source' {
             InModuleScope BackupWindowsToLinux {
                 $s = [LinuxBackupSession]::new($env:TEMP, '/backup', 'host', 'user', '', 22, @(), $false, $false, 'SilentlyContinue')
-                $s.ValidateAndNormalizeSource() | Out-Null
+                $s.ValidateAndNormalizeSource()
                 $s.Source | Should -Match '\\$'
             }
         }
