@@ -1,0 +1,22 @@
+
+#
+$btl = "H:\dev\20260213_claude_backupToLinux"
+
+# eg.;
+Sync-ToLinux `
+    -Source "h:\tmp" `
+    -Destination "/opt/a1b/a1a/users/michaelf/tmp" `
+    -HostName "vu1-i0.a1publishing.net" `
+    -UserName "adm1" `
+    -UseOpenSSH -KeyFile "L:\a1\dev\20260213_claude_backupToLinux\sec\vu1-i0_adm1" `
+    -ExcludePatterns @("cat.*", "arc") `
+    -DeleteOrphaned `
+    -Verbose
+
+# 
+$env:PSModulePath = "H:\dev\_env\pow\mod;" + $env:PSModulePath    
+
+
+# 
+cp -r $btl\mod\BackupToLinux S:\lib\pow\mod
+

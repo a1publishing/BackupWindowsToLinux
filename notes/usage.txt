@@ -1,0 +1,43 @@
+
+# test, eg.;
+Remove-Module BackupWindowsToLinux -Force -ErrorAction SilentlyContinue
+Import-Module "H:\dev\20260213_claude_backupToLinux\bin\BackupWindowsToLinux\2.1.0\BackupWindowsToLinux.psd1" -Force
+Get-Module BackupWindowsToLinux -ListAvailable | Select Name, Version
+Sync-ToLinux `
+  -Source "\\a1publishing.net\public\adm" `
+  -Destination "/tmp/test-backup2" `
+  -HostName "vu1-i0.a1publishing.net" `
+  -UserName "adm1" `
+  -KeyFile "\\a1publishing.net\users\michaelf\adm\sec\ssh\gen\vu1-i0_adm1" `
+  -DryRun -Verbose
+
+2. Install to your module library (but also see update build commands below);
+  The build produces a versioned folder bin\BackupWindowsToLinux\2.1.0\. Your module library uses the same versioned structure, so just copy
+   that folder:
+
+Copy-Item -Path "H:\dev\20260213_claude_backupToLinux\bin\BackupWindowsToLinux\2.1.0" `
+            -Destination "S:\lib\pow\mod\BackupWindowsToLinux\2.1.0" `
+            -Recurse
+
+  Then test with:
+Remove-Module BackupWindowsToLinux -Force -ErrorAction SilentlyContinue
+Import-Module BackupWindowsToLinux -RequiredVersion 2.1.0 -Force
+
+  You don't need to touch or overwrite the old 2.0.0 folder — PowerShell will load the highest version by default, so 2.1.0 will take over
+  automatically.
+
+# Updated build;
+
+  ┌──────────────────────┬─────────────────────────────────────────────────┐
+  │       Command        │                  What it does                   │
+  ├──────────────────────┼─────────────────────────────────────────────────┤
+  │ Invoke-Build         │ Clean, test source, compile, test build         │
+  ├──────────────────────┼─────────────────────────────────────────────────┤
+  │ Invoke-Build Deploy  │ Same as above + install to S:\lib\pow\mod\      │
+  ├──────────────────────┼─────────────────────────────────────────────────┤
+  │ Invoke-Build Install │ Install existing bin to library (skips rebuild) │
+  ├──────────────────────┼─────────────────────────────────────────────────┤
+  │ Invoke-Build Publish │ Publish to PSGallery                            │
+  └──────────────────────┴─────────────────────────────────────────────────┘
+
+  So for your current retesting workflow: run Invoke-Build Deploy and it'll rebuild and drop 2.1.0 into your library in one step.
