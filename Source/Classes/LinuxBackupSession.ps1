@@ -58,7 +58,7 @@ class LinuxBackupSession {
     # Helper method to escape special characters for bash shell
     [string] ConvertToBashEscapedString([string]$InputString) {
         # Escape single quotes by ending quote, adding escaped quote, and starting quote again
-        return $InputString -replace "'", "'\\''"
+        return $InputString -replace "'", "'\''"
     }
 
     # Test if OpenSSH client is installed

@@ -123,30 +123,6 @@ Describe 'LinuxBackupSession unit tests' -Tag 'Unit' {
 
     BeforeAll {
         Import-Module "$ModulePath\$ModuleName.psd1" -ErrorAction Stop
-
-        # Helper: construct a session object without running Execute
-        $Script:NewSession = {
-            param([hashtable]$Overrides = @{})
-            $defaults = @{
-                Source           = $env:TEMP
-                Destination      = '/backup/test'
-                HostName         = 'localhost'
-                UserName         = 'user'
-                KeyFile          = ''
-                Port             = 22
-                ExcludePatterns  = @()
-                DryRun           = $false
-                DeleteOrphaned   = $false
-                VerbosePreference = 'SilentlyContinue'
-            }
-            $Overrides.GetEnumerator() | ForEach-Object { $defaults[$_.Key] = $_.Value }
-            [LinuxBackupSession]::new(
-                $defaults.Source, $defaults.Destination, $defaults.HostName,
-                $defaults.UserName, $defaults.KeyFile, $defaults.Port,
-                $defaults.ExcludePatterns, $defaults.DryRun, $defaults.DeleteOrphaned,
-                $defaults.VerbosePreference
-            )
-        }
     }
 
     AfterAll {
@@ -156,61 +132,76 @@ Describe 'LinuxBackupSession unit tests' -Tag 'Unit' {
     Context 'ConvertToBashEscapedString' {
 
         It 'Escapes single quotes' {
-            $session = & $Script:NewSession
-            $session.ConvertToBashEscapedString("it's") | Should -Be "it'\''s"
+            InModuleScope BackupWindowsToLinux {
+                $s = [LinuxBackupSession]::new($env:TEMP, '/backup', 'host', 'user', '', 22, @(), $false, $false, 'SilentlyContinue')
+                $s.ConvertToBashEscapedString("it's") | Should -Be "it'\''s"
+            }
         }
 
         It 'Handles £ and € without modification' {
-            $session = & $Script:NewSession
-            $result = $session.ConvertToBashEscapedString('/path/with/£-and-€')
-            $result | Should -Be '/path/with/£-and-€'
+            InModuleScope BackupWindowsToLinux {
+                $s = [LinuxBackupSession]::new($env:TEMP, '/backup', 'host', 'user', '', 22, @(), $false, $false, 'SilentlyContinue')
+                $s.ConvertToBashEscapedString('/path/with/£-and-€') | Should -Be '/path/with/£-and-€'
+            }
         }
 
         It 'Handles paths with spaces' {
-            $session = & $Script:NewSession
-            $session.ConvertToBashEscapedString('/my path/with spaces') | Should -Be '/my path/with spaces'
+            InModuleScope BackupWindowsToLinux {
+                $s = [LinuxBackupSession]::new($env:TEMP, '/backup', 'host', 'user', '', 22, @(), $false, $false, 'SilentlyContinue')
+                $s.ConvertToBashEscapedString('/my path/with spaces') | Should -Be '/my path/with spaces'
+            }
         }
     }
 
     Context 'NormalizeDestination' {
 
         It 'Adds trailing slash when missing' {
-            $session = & $Script:NewSession @{ Destination = '/backup/test' }
-            $session.NormalizeDestination()
-            $session.Destination | Should -Be '/backup/test/'
+            InModuleScope BackupWindowsToLinux {
+                $s = [LinuxBackupSession]::new($env:TEMP, '/backup/test', 'host', 'user', '', 22, @(), $false, $false, 'SilentlyContinue')
+                $s.NormalizeDestination()
+                $s.Destination | Should -Be '/backup/test/'
+            }
         }
 
         It 'Does not double trailing slash' {
-            $session = & $Script:NewSession @{ Destination = '/backup/test/' }
-            $session.NormalizeDestination()
-            $session.Destination | Should -Be '/backup/test/'
+            InModuleScope BackupWindowsToLinux {
+                $s = [LinuxBackupSession]::new($env:TEMP, '/backup/test/', 'host', 'user', '', 22, @(), $false, $false, 'SilentlyContinue')
+                $s.NormalizeDestination()
+                $s.Destination | Should -Be '/backup/test/'
+            }
         }
 
         It 'Converts backslashes to forward slashes' {
-            $session = & $Script:NewSession @{ Destination = '\backup\test' }
-            $session.NormalizeDestination()
-            $session.Destination | Should -Be '/backup/test/'
+            InModuleScope BackupWindowsToLinux {
+                $s = [LinuxBackupSession]::new($env:TEMP, '\backup\test', 'host', 'user', '', 22, @(), $false, $false, 'SilentlyContinue')
+                $s.NormalizeDestination()
+                $s.Destination | Should -Be '/backup/test/'
+            }
         }
     }
 
     Context 'ValidateAndNormalizeSource' {
 
         It 'Returns false for non-existent path' {
-            $session = & $Script:NewSession @{ Source = 'C:\ThisPathDoesNotExist_XYZ_12345' }
-            $result = $session.ValidateAndNormalizeSource()
-            $result | Should -Be $false
+            InModuleScope BackupWindowsToLinux {
+                $s = [LinuxBackupSession]::new('C:\ThisPathDoesNotExist_XYZ_12345', '/backup', 'host', 'user', '', 22, @(), $false, $false, 'SilentlyContinue')
+                $s.ValidateAndNormalizeSource() | Should -Be $false
+            }
         }
 
         It 'Returns true for existing path' {
-            $session = & $Script:NewSession @{ Source = $env:TEMP }
-            $result = $session.ValidateAndNormalizeSource()
-            $result | Should -Be $true
+            InModuleScope BackupWindowsToLinux {
+                $s = [LinuxBackupSession]::new($env:TEMP, '/backup', 'host', 'user', '', 22, @(), $false, $false, 'SilentlyContinue')
+                $s.ValidateAndNormalizeSource() | Should -Be $true
+            }
         }
 
         It 'Adds trailing backslash to normalized source' {
-            $session = & $Script:NewSession @{ Source = $env:TEMP }
-            $session.ValidateAndNormalizeSource() | Out-Null
-            $session.Source | Should -Match '\\$'
+            InModuleScope BackupWindowsToLinux {
+                $s = [LinuxBackupSession]::new($env:TEMP, '/backup', 'host', 'user', '', 22, @(), $false, $false, 'SilentlyContinue')
+                $s.ValidateAndNormalizeSource() | Out-Null
+                $s.Source | Should -Match '\\$'
+            }
         }
     }
 }
