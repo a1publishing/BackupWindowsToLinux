@@ -1,6 +1,20 @@
 #Requires -Modules @{ModuleName='InvokeBuild';ModuleVersion='5.6.7'}
 #Requires -Modules @{ModuleName='Pester';ModuleVersion='5.1.1'}
 
+<#
+.SYNOPSIS
+    Build script for BackupWindowsToLinux PowerShell module.
+
+.USAGE
+    Invoke-Build                  # Clean, test source, compile, test build
+    Invoke-Build Deploy           # Full build + install to module library
+    Invoke-Build Install          # Install existing bin output to module library (no rebuild)
+    Invoke-Build Publish          # Publish to PSGallery (prompts for API key if $env:PSGALLERY_KEY not set)
+
+.PARAMETERS
+    -PesterOutput  Pester output verbosity: None, Normal, Detailed, Diagnostic (default: Normal)
+#>
+
 param(
     $PesterOutput = 'Normal'
 )
@@ -59,6 +73,15 @@ task TestBuild {
     }
 }
 
+task Install {
+    Write-Build Yellow "`n`n`nInstalling to module library"
+    $moduleBase = (Get-ChildItem -Path "$BuildRoot\bin\$Script:ModuleName" -Directory | Sort-Object Name -Descending | Select-Object -First 1).FullName
+    $version = Split-Path $moduleBase -Leaf
+    $destination = "S:\lib\pow\mod\$Script:ModuleName\$version"
+    Copy-Item -Path $moduleBase -Destination $destination -Recurse -Force
+    Write-Build Green "Installed to $destination"
+}
+
 task Publish {
     Write-Build Yellow "`n`n`nPublishing to PowerShell Gallery"
     $apiKey = $env:PSGALLERY_KEY
@@ -75,3 +98,5 @@ task Publish {
 task . Clean, TestCode, Build
 
 task Build CompilePSM, TestBuild
+
+task Deploy Build, Install
