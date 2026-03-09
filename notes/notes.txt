@@ -8,7 +8,7 @@ Sync-ToLinux `
     -Destination "/opt/a1b/a1a/users/michaelf/tmp" `
     -HostName "vu1-i0.a1publishing.net" `
     -UserName "adm1" `
-    -UseOpenSSH -KeyFile "L:\a1\dev\20260213_claude_backupToLinux\sec\vu1-i0_adm1" `
+    -UseOpenSSH -KeyFile $keyfile_path `
     -ExcludePatterns @("cat.*", "arc") `
     -DeleteOrphaned `
     -Verbose

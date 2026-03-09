@@ -8,7 +8,7 @@ Sync-ToLinux `
   -Destination "/tmp/test-backup2" `
   -HostName "vu1-i0.a1publishing.net" `
   -UserName "adm1" `
-  -KeyFile "\\a1publishing.net\users\michaelf\adm\sec\ssh\gen\vu1-i0_adm1" `
+  -KeyFile $keyfile_path `
   -DryRun -Verbose
 
 2. Install to your module library (but also see update build commands below);
@@ -41,3 +41,10 @@ Import-Module BackupWindowsToLinux -RequiredVersion 2.1.0 -Force
   └──────────────────────┴─────────────────────────────────────────────────┘
 
   So for your current retesting workflow: run Invoke-Build Deploy and it'll rebuild and drop 2.1.0 into your library in one step.
+
+
+# To load and test the library version:
+Import-Module BackupWindowsToLinux -Force
+  # -Force handles the case where it's already loaded. Then verify which copy you're running:
+Get-Module BackupWindowsToLinux | Select-Object Version, Path
+That Path should point to S:\lib\pow\mod\BackupWindowsToLinux\2.1.0\ confirming you're testing the library copy, not the bin output.
