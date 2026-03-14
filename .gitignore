@@ -1,6 +1,51 @@
+# PowerShell Module
+*.psm1.bak
+*.psd1.bak
+
+# Build output
 bin/
-*.bak
-tmp/
-sec/
-*.tmp
+output/
+build/
+release/
+dist/
+
+# Test results
 Test/tmp/
+testResults/
+*.Tests.xml
+coverage.xml
+CodeCoverage/
+
+# Module dependencies
+modules/
+packages/
+
+# NuGet
+*.nupkg
+nuget.exe
+
+# InvokeBuild / psake
+.build/
+*.build.log
+
+# IDE / Editor
+.vscode/
+.vs/
+*.suo
+*.user
+*.code-workspace
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Claude Code
+.claude/
+
+# Temp / misc
+*.tmp
+*.log
+*.bak
+~$*
+notes.txt
